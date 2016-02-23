@@ -82,11 +82,22 @@ module Payola
     end
 
     def confirm_with_message(message)
+      is_json = request.headers['Content-Type'] == 'application/json' || request.format.json?
+      return confirm_json_with_message(message) if is_json
+
       if @subscription.errors.empty?
         redirect_to confirm_subscription_path(@subscription), notice: message
       else
         redirect_to confirm_subscription_path(@subscription), alert: @subscription.errors.full_messages.to_sentence
       end
+    end
+
+    def confirm_json_with_message(message)
+      if @subscription.errors.empty?
+        return render json: { message: message, guid: @subscription.guid, plan: @subscription.plan }
+      end
+
+      render json: { errors: @subscription.errors.messages }, status: 401 if is_json
     end
 
   end
